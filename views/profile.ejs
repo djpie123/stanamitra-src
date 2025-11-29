@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include('header'); -%>
+
+  <body>
+    <%- include('nav'); -%>
+
+    <section class="hero contact-hero">
+      <div class="hero-overlay"></div>
+      <div class="container">
+        <div class="hero-content">
+          <h2>Your Profile</h2>
+          <p>Manage your account and view your details.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-about">
+      <div class="container">
+        <% if (!user) { %>
+          <p>Please <a href="/login">login</a> to view your profile.</p>
+        <% } else { %>
+          <div class="profile-card">
+            <h2><%= user.name %></h2>
+            <p><strong>Email:</strong> <%= user.email %></p>
+            <p><strong>Member since:</strong> <%= user.createdAt ? new Date(user.createdAt).toDateString() : 'N/A' %></p>
+            <form action="/logout" method="post" style="display: flex; gap: 10px; align-items: center;">
+              <button class="btn-secondary" type="submit">Logout</button>
+              <a href="/list" class="btn-secondary" style="text-decoration: none; padding: 8px 16px; background: #ff6b35; color: white; border-radius: 4px; display: inline-block;">List Property</a>
+            </form>
+            <div class="wishlist-section">
+              <h3>Your Wishlist</h3>
+              <% if (user.wishlist && user.wishlist.length) { %>
+                <ul class="wishlist-list" id="wishlist-items">
+                  <% user.wishlist.forEach(function(item){ %>
+                    <li data-property-id="<%= item.id %>">
+                      <a href="/property/<%= item.id %>"><img src="<%= item.image %>" alt="" style="width:60px;height:40px;object-fit:cover;margin-right:8px;"/> <strong><%= item.title %></strong> — ₹<%= item.price.toLocaleString('en-IN') %> (<%= item.city %>)</a>
+                      <button class="btn-link remove-wishlist-btn" data-property-id="<%= item.id %>" style="margin-left:8px;cursor:pointer;background:none;border:none;color:#007bff;text-decoration:underline;" type="button">Remove</button>
+                    </li>
+                  <% }) %>
+                </ul>
+              <% } else { %>
+                <p id="empty-wishlist-msg">You have no items in your wishlist yet. Add some from property pages.</p>
+              <% } %>
+            </div>
+
+            <div class="bookings-section" style="margin-top: 30px; padding-top: 30px; border-top: 1px solid #eee;">
+              <h3>Your Bookings</h3>
+              <% if (bookings && bookings.length) { %>
+                <div class="bookings-list" id="bookings-items">
+                  <% bookings.forEach(function(booking){ 
+                    const isFreeMonth = new Date() < new Date(booking.freeMonthEndDate);
+                    const isCancelled = booking.status === 'cancelled';
+                  %>
+                    <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid <%= isCancelled ? '#dc3545' : isFreeMonth ? '#28a745' : '#007bff' %>;">
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="flex: 1;">
+                          <h4 style="margin: 0 0 10px 0; color: #333;"><%= booking.propertyTitle %></h4>
+                          <p style="margin: 5px 0; color: #666; font-size: 14px;"><strong>Property ID:</strong> <%= booking.propertyId.substring(0, 8) %>...</p>
+                          <p style="margin: 5px 0; color: #666; font-size: 14px;"><strong>Booked on:</strong> <%= new Date(booking.bookingDate).toLocaleDateString('en-IN') %></p>
+                          <p style="margin: 5px 0; color: #666; font-size: 14px;"><strong>Monthly Rent:</strong> ₹<%= booking.propertyPrice.toLocaleString('en-IN') %></p>
+                          <p style="margin: 5px 0; color: #666; font-size: 14px;"><strong>Your Name:</strong> <%= booking.tenantName %></p>
+                          <p style="margin: 5px 0; color: #666; font-size: 14px;"><strong>Phone:</strong> <%= booking.tenantPhone %></p>
+                        </div>
+                        <div style="text-align: right;">
+                          <% if (isCancelled) { %>
+                            <span style="background: #dc3545; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;">CANCELLED</span>
+                            <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">Cancelled on <%= new Date(booking.cancelledAt).toLocaleDateString('en-IN') %></p>
+                          <% } else if (isFreeMonth) { %>
+                            <span style="background: #28a745; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;">FREE MONTH ACTIVE</span>
+                            <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">Until <%= new Date(booking.freeMonthEndDate).toLocaleDateString('en-IN') %></p>
+                            <button class="cancel-booking-btn" data-booking-id="<%= booking.id %>" style="margin-top: 10px; padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Cancel Booking</button>
+                          <% } else { %>
+                            <span style="background: #007bff; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;">ACTIVE</span>
+                            <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">Booked on <%= new Date(booking.bookingDate).toLocaleDateString('en-IN') %></p>
+                            <button class="cancel-booking-btn" data-booking-id="<%= booking.id %>" style="margin-top: 10px; padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Cancel Booking</button>
+                          <% } %>
+                        </div>
+                      </div>
+                    </div>
+                  <% }) %>
+                </div>
+              <% } else { %>
+                <p id="empty-bookings-msg">You have no bookings yet. <a href="/properties" style="color: #007bff; text-decoration: none;">Browse properties</a> and book now!</p>
+              <% } %>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <%- include('footer'); -%>
+  </body>
+  <script>
+    (function(){
+
+      const removeButtons = document.querySelectorAll('.remove-wishlist-btn');
+      removeButtons.forEach(function(btn){
+        btn.addEventListener('click', async function(){
+          const propertyId = this.getAttribute('data-property-id');
+          try {
+            const resp = await fetch('/wishlist/remove', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ propertyId: propertyId })
+            });
+            const data = await resp.json();
+            if (resp.ok) {
+              const listItem = document.querySelector(`li[data-property-id="${propertyId}"]`);
+              if (listItem) listItem.remove();
+              const remainingItems = document.querySelectorAll('#wishlist-items li');
+              if (remainingItems.length === 0) {
+                const wishlistList = document.getElementById('wishlist-items');
+                if (wishlistList) wishlistList.remove();
+                const emptyMsg = document.getElementById('empty-wishlist-msg');
+                if (!emptyMsg) {
+                  const msgEl = document.createElement('p');
+                  msgEl.id = 'empty-wishlist-msg';
+                  msgEl.textContent = 'You have no items in your wishlist yet. Add some from property pages.';
+                  document.querySelector('.wishlist-section').appendChild(msgEl);
+                }
+              }
+            } else {
+              alert(data.error || 'Failed to remove from wishlist');
+            }
+          } catch (err) {
+            console.error(err);
+            alert('Network error');
+          }
+        });
+      });
+
+    
+      const cancelButtons = document.querySelectorAll('.cancel-booking-btn');
+      cancelButtons.forEach(function(btn){
+        btn.addEventListener('click', async function(){
+          if (!confirm('Are you sure you want to cancel this booking?')) {
+            return;
+          }
+          const bookingId = this.getAttribute('data-booking-id');
+          try {
+            const resp = await fetch(`/booking/cancel/${bookingId}`, {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'}
+            });
+            const data = await resp.json();
+            if (resp.ok) {
+            
+              window.location.reload();
+            } else {
+              alert(data.error || 'Failed to cancel booking');
+            }
+          } catch (err) {
+            console.error(err);
+            alert('Network error');
+          }
+        });
+      });
+    })();
+  </script>
+</html>

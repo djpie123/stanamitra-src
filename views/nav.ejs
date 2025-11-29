@@ -1,0 +1,77 @@
+<nav class="navbar">
+    <div class="container">
+      <div class="nav-content">
+        <a href="/">
+                  <img src="https://i.ibb.co/1J2X5dmw/New-Project-147-56-C89-BB.png" alt="SthanaMitra Logo" class="logo"/>
+        </a>
+
+      
+        <div class="nav-links">
+          <a href="/properties" class="nav-link">Browse</a>
+          <a href="/list" class="nav-link">List A Property</a>
+          <a href="/about" class="nav-link">About Us</a>
+          <a href="/contact" class="nav-link">Contact Us</a>
+          <% if (user) { %>
+            <a href="/profile" class="nav-link">Hello, <%= user.name %></a>
+            <a href="#" class="nav-link" id="logout-link">Logout</a>
+          <% } else { %>
+            <a href="/login" class="nav-link">Login</a>
+            <a href="/register" class="nav-link">Register</a>
+          <% } %>
+        </div>
+
+       
+        <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+          <span class="hamburger"></span>
+        </button>
+        <form id="logout-form" action="/logout" method="post" style="display:none"></form>
+        <% if (user) { %>
+          <a href="/profile" class="profile-icon" title="Profile" style="margin-left:8px;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background-color:#007bff;color:white;font-weight:bold;text-decoration:none;font-size:14px;"><%= (user.name || '').split(' ').map(function(n){return n[0]||''}).slice(0,2).join('').toUpperCase() %></a>
+        <% } %>
+        <% if (successMessage) { %>
+          <div class="alert-success" style="position:absolute; right: 0; top: 100%; margin-top: 8px; z-index: 200;">
+            <%= successMessage %>
+          </div>
+        <% } %>
+        <% if (errorMessage) { %>
+          <div class="alert-error" style="position:absolute; right: 0; top: 100%; margin-top: 8px; z-index: 200;">
+            <%= errorMessage %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </nav>
+
+  <script>
+   
+    (function() {
+      document.addEventListener('DOMContentLoaded', function () {
+        var toggle = document.querySelector('.nav-toggle');
+        var navContent = document.querySelector('.nav-content');
+        if (!toggle || !navContent) return;
+        toggle.addEventListener('click', function () {
+          var expanded = toggle.getAttribute('aria-expanded') === 'true';
+          toggle.setAttribute('aria-expanded', String(!expanded));
+          navContent.classList.toggle('nav-open');
+        });
+
+       
+        var navLinks = document.querySelectorAll('.nav-links a');
+        navLinks.forEach(function (link) {
+          link.addEventListener('click', function () {
+            navContent.classList.remove('nav-open');
+            toggle.setAttribute('aria-expanded', 'false');
+          });
+        });
+
+        var logoutLink = document.getElementById('logout-link');
+        if (logoutLink) {
+          logoutLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            var form = document.getElementById('logout-form');
+            if (form) form.submit();
+          });
+        }
+      });
+    })();
+  </script>

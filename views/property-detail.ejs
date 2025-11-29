@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('header'); -%>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <div class="nav-content">
+        <a href="/">
+                  <img src="https://i.ibb.co/1J2X5dmw/New-Project-147-56-C89-BB.png" alt="SthanaMitra Logo" class="logo"/>
+        </a>
+        <a href="/properties" class="nav-link">Browse</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container property-detail">
+    <a href="/properties" class="back-link">← Back to Properties</a>
+
+    <div class="property-hero">
+      <div class="image-gallery">
+        <img id="mainImage" src="<%= property.images[0] %>" alt="<%= property.title %>" class="main-image">
+        <div class="thumbnail-images">
+          <% property.images.forEach(image => { %>
+            <img src="<%= image %>" alt="thumbnail" onclick="document.getElementById('mainImage').src = '<%= image %>';" class="thumbnail">
+          <% }); %>
+        </div>
+      </div>
+    </div>
+
+    <div class="property-content">
+      <div class="property-left">
+        <div class="property-header">
+          <h1><%= property.title %></h1>
+          <p class="location"><%= property.area %>, <%= property.city %></p>
+          <div class="rating-section">
+            <span class="rating">⭐ <%= property.rating %> (<%= property.totalReviews %> reviews)</span>
+          </div>
+        </div>
+
+        <div class="property-details">
+          <h2>About this property</h2>
+          <p><%= property.description %></p>
+
+          <div class="details-grid">
+            <div class="detail-item">
+              <span class="label">Property Type</span>
+              <span class="value"><%= property.propertyType.toUpperCase() %></span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Room Type</span>
+              <span class="value"><%= property.roomType.charAt(0).toUpperCase() + property.roomType.slice(1) %></span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Gender Preference</span>
+              <span class="value"><%= property.genderPreference === 'any' ? 'Any' : property.genderPreference.charAt(0).toUpperCase() + property.genderPreference.slice(1) %></span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Available Rooms</span>
+              <span class="value"><%= property.availableRooms %></span>
+            </div>
+          </div>
+
+          <div class="amenities-section">
+            <h3>Amenities</h3>
+            <div class="amenities-list">
+              <% property.amenities.forEach(amenity => { %>
+                <span class="amenity-badge"><%= amenity %></span>
+              <% }); %>
+            </div>
+          </div>
+
+          <% if (reviews.length > 0) { %>
+            <div class="reviews-section">
+              <h3>Reviews (<%= reviews.length %>)</h3>
+              <div class="reviews-list">
+                <% reviews.forEach(review => { %>
+                  <div class="review-item">
+                    <div class="review-header">
+                      <span class="reviewer-name"><%= review.studentName %></span>
+                      <span class="review-rating">⭐ <%= review.rating %></span>
+                    </div>
+                    <p class="review-university"><%= review.university %></p>
+                    <p class="review-comment"><%= review.comment %></p>
+                    <p class="review-date"><%= new Date(review.date).toLocaleDateString() %></p>
+                  </div>
+                <% }); %>
+              </div>
+            </div>
+          <% } %>
+
+          <div class="write-review-section" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+            <h3 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1.5rem;">Write a Review</h3>
+            <% if (user) { %>
+              <form id="review-form" style="display: grid; gap: 1.5rem;">
+                <div>
+                  <label for="studentName" style="display: block; margin-bottom: 0.7rem; font-weight: 600; color: var(--text-dark); font-size: 0.95rem;">Your Name *</label>
+                  <input type="text" id="studentName" name="studentName" required style="width: 100%; padding: 0.7rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; transition: var(--transition);" placeholder="Enter your name">
+                </div>
+
+                <div>
+                  <label for="university" style="display: block; margin-bottom: 0.7rem; font-weight: 600; color: var(--text-dark); font-size: 0.95rem;">University/College *</label>
+                  <input type="text" id="university" name="university" required style="width: 100%; padding: 0.7rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; transition: var(--transition);" placeholder="Enter your university/college name">
+                </div>
+
+                <div>
+                  <label for="rating" style="display: block; margin-bottom: 0.7rem; font-weight: 600; color: var(--text-dark); font-size: 0.95rem;">Rating *</label>
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <select id="rating" name="rating" required style="padding: 0.7rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem;">
+                      <option value="">Select rating</option>
+                      <option value="1">⭐ 1 - Poor</option>
+                      <option value="2">⭐⭐ 2 - Fair</option>
+                      <option value="3">⭐⭐⭐ 3 - Good</option>
+                      <option value="4">⭐⭐⭐⭐ 4 - Very Good</option>
+                      <option value="5">⭐⭐⭐⭐⭐ 5 - Excellent</option>
+                    </select>
+                    <span id="rating-display" style="font-size: 1.5rem;">Select rating</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label for="comment" style="display: block; margin-bottom: 0.7rem; font-weight: 600; color: var(--text-dark); font-size: 0.95rem;">Your Review *</label>
+                  <textarea id="comment" name="comment" required rows="5" style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; font-family: inherit; transition: var(--transition); resize: vertical;" placeholder="Share your experience with this property..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; padding: 0.9rem; font-size: 1rem;">Submit Review</button>
+              </form>
+              <div id="review-message" style="display: none; margin-top: 1rem; padding: 1rem; border-radius: 8px; text-align: center;"></div>
+            <% } else { %>
+              <div style="background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 107, 53, 0.05) 100%); padding: 2rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255, 107, 53, 0.2);">
+                <p style="color: var(--text-dark); margin-bottom: 1rem; font-weight: 600;">Please <a href="/login" style="color: var(--primary-color); text-decoration: none; font-weight: 700;">login</a> to write a review</p>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <aside class="property-right">
+        <div class="booking-card">
+          <div class="price-section">
+            <span class="price-label">Monthly Rent</span>
+            <span class="price">₹<%= property.price.toLocaleString('en-IN') %></span>
+          </div>
+
+          <div class="distance-section">
+            <span class="distance">📍 <%= property.distanceFromCollege %> km from campus</span>
+          </div>
+
+          <button id="book-now-btn" class="btn-primary btn-large">Book Now</button>
+          <% const inWishlist = user && user.wishlist && user.wishlist.find(function(p){ return String(p.id) === String(property.id); }); %>
+          <button id="wishlist-btn" class="btn-secondary btn-large"><%= inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist' %></button>
+
+          <div class="verification-badge">
+            <% if (property.verified) { %>
+              <span class="verified">✓ Verified Property</span>
+            <% } %>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <p>&copy; 2024 SthanaMitra. All rights reserved.</p>
+    </div>
+  </footer>
+  <script>
+    (function(){
+   
+      const ratingSelect = document.getElementById('rating');
+      const ratingDisplay = document.getElementById('rating-display');
+      if (ratingSelect) {
+        ratingSelect.addEventListener('change', function() {
+          if (this.value) {
+            ratingDisplay.textContent = this.options[this.selectedIndex].text.split(' ')[0];
+          } else {
+            ratingDisplay.textContent = 'Select rating';
+          }
+        });
+      }
+
+      
+      const reviewForm = document.getElementById('review-form');
+      if (reviewForm) {
+        reviewForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          const studentName = document.getElementById('studentName').value;
+          const university = document.getElementById('university').value;
+          const rating = document.getElementById('rating').value;
+          const comment = document.getElementById('comment').value;
+          const propertyId = '<%= property.id || property._id %>';
+          
+          try {
+            const resp = await fetch('/review', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ propertyId, studentName, university, rating, comment })
+            });
+            const data = await resp.json();
+            
+            const messageEl = document.getElementById('review-message');
+            if (resp.ok) {
+              messageEl.style.display = 'block';
+              messageEl.style.background = '#28a745';
+              messageEl.style.color = 'white';
+              messageEl.textContent = '✓ Review submitted successfully! Your review will be visible after approval.';
+              reviewForm.reset();
+              ratingDisplay.textContent = 'Select rating';
+              setTimeout(() => {
+                messageEl.style.display = 'none';
+              }, 5000);
+            } else {
+              messageEl.style.display = 'block';
+              messageEl.style.background = '#f8d7da';
+              messageEl.style.color = '#721c24';
+              messageEl.textContent = data.error || 'Failed to submit review';
+            }
+          } catch (err) {
+            console.error(err);
+            const messageEl = document.getElementById('review-message');
+            messageEl.style.display = 'block';
+            messageEl.style.background = '#f8d7da';
+            messageEl.style.color = '#721c24';
+            messageEl.textContent = 'Network error. Please try again.';
+          }
+        });
+      }
+
+      const bookBtn = document.getElementById('book-now-btn');
+      if (bookBtn) {
+        bookBtn.addEventListener('click', function(){
+          const userPresent = <%= user ? 'true' : 'false' %>;
+          if (!userPresent) {
+            window.location.href = '/login';
+            return;
+          }
+          window.location.href = '/booking/<%= property.id || property._id %>';
+        });
+      }
+
+      const btn = document.getElementById('wishlist-btn');
+      if (!btn) return;
+      btn.addEventListener('click', async function(){
+        
+        const userPresent = <%= user ? 'true' : 'false' %>;
+        if (!userPresent) {
+          
+          window.location.href = '/login';
+          return;
+        }
+        const inWishlist = btn.textContent.trim().toLowerCase().includes('remove');
+        const url = inWishlist ? '/wishlist/remove' : '/wishlist/add';
+        const body = { propertyId: '<%= property.id || property._id || property._id || property.id %>' };
+        try {
+          const resp = await fetch(url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+          const data = await resp.json();
+          if (resp.ok) {
+            btn.textContent = inWishlist ? 'Add to Wishlist' : 'Remove from Wishlist';
+          } else {
+            alert(data.error || 'Failed to update wishlist');
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Network error');
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

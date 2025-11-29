@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('header'); -%>
+
+<body>
+ <%- include('nav'); -%>
+
+  <section class="hero">
+    <div class="hero-overlay"></div>
+    <div class="container">
+      <div class="hero-content">
+        <h2>Find Your Perfect Student Home</h2>
+        <p>Discover verified PGs, hostels, and flats in 500+ cities across India</p>
+        <form action="/properties" method="GET" class="search-form">
+          <input type="text" name="search" placeholder="Search by city or area..." required>
+          <button type="submit">Search</button>
+        </form>
+        
+      </div>
+    </div>
+    
+    <video id="background-video" autoplay loop muted poster="/frame.jpg">
+          <source src="https://media.istockphoto.com/id/844374682/video/crowded-market-street-bangalore-india-4k-timelapse.mp4?s=mp4-640x640-is&k=20&c=RCx1HaUUfGr34bUAcprDfef7y8mERFP6D3JCOONeNKU=" type="video/mp4">
+     </video>
+  </section>
+  
+  <section class="section-featured-cities">
+    <div class="container">
+      <h2>Featured Cities</h2>
+      <div class="cities-grid">
+        <% cities.forEach(city => { %>
+          <a href="/properties?city=<%= encodeURIComponent(city.name) %>" class="city-card">
+            <img src="<%= city.image %>" alt="<%= city.name %>">
+            <div class="city-info">
+              <h3><%= city.name %></h3>
+              <p><%= city.propertyCount %> properties</p>
+            </div>
+          </a>
+        <% }); %>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-popular">
+    <div class="container">
+      <h2>Popular Properties</h2>
+      <div class="properties-grid">
+        <% properties.forEach(property => { %>
+          <a href="/property/<%= property.id %>" class="property-card">
+            <div class="property-image">
+              <img src="<%= property.images[0] %>" alt="<%= property.title %>">
+              <span class="property-type"><%= property.propertyType %></span>
+            </div>
+            <div class="property-info">
+              <h3><%= property.title %></h3>
+              <p class="location"><%= property.area %>, <%= property.city %></p>
+              <div class="amenities">
+                <% property.amenities.slice(0, 3).forEach(amenity => { %>
+                  <span class="amenity-tag"><%= amenity %></span>
+                <% }); %>
+              </div>
+              <div class="property-footer">
+                <span class="price">₹<%= property.price.toLocaleString('en-IN') %>/month</span>
+                <span class="rating">⭐ <%= property.rating %></span>
+              </div>
+            </div>
+          </a>
+        <% }); %>
+      </div>
+    </div>
+  </section>
+
+  <%- include('footer'); -%>
+</body>
+</html>

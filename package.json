@@ -1,0 +1,19 @@
+{
+  "name": "SthanaMitra",
+  "version": "1.0.0",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "node server/index.js",
+    "start": "node server/index.js"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "mongodb": "^4.14.0",
+    "bcryptjs": "^2.4.3",
+    "express-session": "^1.17.3",
+    "connect-mongo": "^4.6.0",
+    "multer": "^1.4.5-lts.1"
+  }
+}

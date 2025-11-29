@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('header'); -%>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <div class="nav-content">
+        <a href="/">
+          <img src="https://i.ibb.co/1J2X5dmw/New-Project-147-56-C89-BB.png" alt="SthanaMitra Logo" class="logo"/>
+        </a>
+        <a href="/properties" class="nav-link">Browse</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container" style="max-width: 800px; margin: 40px auto;">
+    <a href="/property/<%= property.id || property._id %>" class="back-link">← Back to Property</a>
+
+    <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+      <h1 style="color: #333; margin-bottom: 30px;">Book <%= property.title %></h1>
+
+      <% if (error) { %>
+        <div style="background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f5c6cb;">
+          <%= error %>
+        </div>
+      <% } %>
+
+      <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+        <h3 style="margin-top: 0; color: #333;">Property Details</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div>
+            <p style="margin: 10px 0;"><strong>Property:</strong> <%= property.title %></p>
+            <p style="margin: 10px 0;"><strong>Location:</strong> <%= property.area %>, <%= property.city %></p>
+            <p style="margin: 10px 0;"><strong>Room Type:</strong> <%= property.roomType.charAt(0).toUpperCase() + property.roomType.slice(1) %></p>
+          </div>
+          <div>
+            <p style="margin: 10px 0;"><strong>Monthly Rent:</strong> <span style="font-size: 20px; color: #007bff; font-weight: bold;">₹<%= property.price.toLocaleString('en-IN') %></span></p>
+            <p style="margin: 10px 0; color: #28a745; font-weight: bold;">✓ First month FREE!</p>
+            <p style="margin: 10px 0; font-size: 14px; color: #666;">You'll start paying from the second month</p>
+          </div>
+        </div>
+      </div>
+
+      <form method="POST" action="/booking" style="display: grid; gap: 20px;">
+        <input type="hidden" name="propertyId" value="<%= property.id || property._id %>">
+
+        <div>
+          <label for="tenantName" style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">Full Name *</label>
+          <input type="text" id="tenantName" name="tenantName" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box;" placeholder="Enter your full name">
+        </div>
+
+        <div>
+          <label for="tenantPhone" style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">Phone Number *</label>
+          <input type="tel" id="tenantPhone" name="tenantPhone" required pattern="[0-9]{10}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box;" placeholder="Enter 10-digit phone number">
+        </div>
+
+        <div>
+          <label for="tenantAddress" style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">Permanent Address *</label>
+          <textarea id="tenantAddress" name="tenantAddress" required rows="4" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box; font-family: inherit;" placeholder="Enter your complete permanent address"></textarea>
+        </div>
+
+        <div>
+          <label for="aadhaarNumber" style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">Aadhaar Number *</label>
+          <input type="text" id="aadhaarNumber" name="aadhaarNumber" required pattern="[0-9]{12}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box;" placeholder="Enter 12-digit Aadhaar number">
+          <p style="font-size: 12px; color: #666; margin-top: 5px;">Your Aadhaar number is required for verification purposes and is securely stored.</p>
+        </div>
+
+        <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
+          <p style="margin: 0; color: #004085; font-size: 14px;">
+            <strong>Important:</strong> By submitting this form, you confirm that all the information provided is accurate. Your first month's rent is free!
+          </p>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%; padding: 14px; font-size: 16px; font-weight: 600;">Confirm Booking</button>
+        <a href="/property/<%= property.id || property._id %>" style="display: block; text-align: center; padding: 12px; color: #666; text-decoration: none; border: 1px solid #ddd; border-radius: 6px;">Cancel</a>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <p>&copy; 2024 SthanaMitra. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('aadhaarNumber').addEventListener('input', function(e) {
+      e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 12);
+    });
+
+    document.getElementById('tenantPhone').addEventListener('input', function(e) {
+      e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+    });
+  </script>
+</body>
+</html>
