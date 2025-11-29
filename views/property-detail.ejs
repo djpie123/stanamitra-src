@@ -18,11 +18,18 @@
 
     <div class="property-hero">
       <div class="image-gallery">
-        <img id="mainImage" src="<%= property.images[0] %>" alt="<%= property.title %>" class="main-image">
+        <% const mainImg = property.images && property.images.length ? property.images[0] : null; %>
+        <% let mainDefault = '/placeholder.jpg'; %>
+        <% if (mainImg) { if (typeof mainImg === 'string') { mainDefault = mainImg; } else { mainDefault = mainImg.default || (mainImg.formats && mainImg.formats.length ? mainImg.formats[0].src : '/placeholder.jpg'); } } %>
+        <img id="mainImage" src="<%= mainDefault %>" alt="<%= property.title %>" class="main-image">
         <div class="thumbnail-images">
-          <% property.images.forEach(image => { %>
-            <img src="<%= image %>" alt="thumbnail" onclick="document.getElementById('mainImage').src = '<%= image %>';" class="thumbnail">
-          <% }); %>
+          <% if (property.images && property.images.length > 0) { %>
+            <% property.images.forEach(imageObj => { %>
+              <% let thumbSrc = '/placeholder.jpg'; let mainSrc = '/placeholder.jpg'; %>
+              <% if (typeof imageObj === 'string') { thumbSrc = imageObj; mainSrc = imageObj; } else { const formats = imageObj.formats || []; const sorted = formats.filter(f => f.width).sort((a,b) => a.width - b.width); const small = sorted.find(f => f.width <= 480) || sorted[0]; thumbSrc = small ? small.src : (imageObj.default || '/placeholder.jpg'); mainSrc = imageObj.default || (sorted.length ? sorted[sorted.length - 1].src : '/placeholder.jpg'); } %>
+              <img src="<%= thumbSrc %>" alt="thumbnail" onclick="document.getElementById('mainImage').src = '<%= mainSrc %>'" class="thumbnail">
+            <% }); %>
+          <% } %>
         </div>
       </div>
     </div>

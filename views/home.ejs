@@ -48,7 +48,23 @@
         <% properties.forEach(property => { %>
           <a href="/property/<%= property.id %>" class="property-card">
             <div class="property-image">
-              <img src="<%= property.images[0] %>" alt="<%= property.title %>">
+              <% const firstImg = property.images && property.images.length ? property.images[0] : null; %>
+              <% if (firstImg) { %>
+                <% if (typeof firstImg === 'string') { %>
+                  <img src="<%= firstImg %>" alt="<%= property.title %>">
+                <% } else { %>
+                  <% const webpFormats = firstImg.formats ? firstImg.formats.filter(f => f.mime === 'image/webp').sort((a,b)=>a.width-b.width) : []; %>
+                  <% const jpgFormats = firstImg.formats ? firstImg.formats.filter(f => f.mime === 'image/jpeg').sort((a,b)=>a.width-b.width) : []; %>
+                  <picture>
+                    <% if (webpFormats.length) { %>
+                      <source type="image/webp" srcset="<%= webpFormats.map(f => `${f.src} ${f.width}w`).join(', ') %>">
+                    <% } %>
+                    <img src="<%= firstImg.default || (jpgFormats.length ? jpgFormats[jpgFormats.length-1].src : '/placeholder.jpg') %>" srcset="<%= jpgFormats.map(f => `${f.src} ${f.width}w`).join(', ') %>" sizes="(max-width:600px) 100vw, 33vw" alt="<%= property.title %>">
+                  </picture>
+                <% } %>
+              <% } else { %>
+                <img src="/placeholder.jpg" alt="<%= property.title %>">
+              <% } %>
               <span class="property-type"><%= property.propertyType %></span>
             </div>
             <div class="property-info">

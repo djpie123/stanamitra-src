@@ -5,8 +5,11 @@
 <%- include('nav'); -%>
 
 <main class="container properties-container">
-  <aside class="filters-sidebar">
-    <h3>Filters</h3>
+  <aside class="filters-sidebar" id="filtersSidebar" aria-hidden="false">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <h3 id="filtersTitle" style="margin:0;">Filters</h3>
+      <button id="filtersClose" class="btn btn-outline" style="margin-left:auto;">Close</button>
+    </div>
     <form action="/properties" method="GET" id="filterForm">
       <div class="filter-group">
         <label for="city">City</label>
@@ -60,6 +63,7 @@
   </aside>
 
   <section class="properties-main">
+    <button id="filtersToggle" class="filters-toggle-btn" aria-expanded="false" aria-controls="filtersSidebar">Show filters</button>
     <div class="properties-header">
       <h2><%= currentSearch ? `Search: "${currentSearch}"` : currentCity ? `Properties in ${currentCity}` : 'All Properties' %></h2>
       <p><%= properties.length %> properties found</p>
@@ -70,9 +74,25 @@
         <% properties.forEach(property => { %>
           <a href="/property/<%= property.id %>" class="property-card">
             <div class="property-image">
-              <img src="<%= property.images && property.images[0] ? property.images[0] : '/placeholder.jpg' %>" alt="<%= property.title %>">
-              <span class="property-type"><%= property.propertyType %></span>
-            </div>
+                  <% const firstImg = property.images && property.images.length ? property.images[0] : null; %>
+                  <% if (firstImg) { %>
+                    <% if (typeof firstImg === 'string') { %>
+                      <img src="<%= firstImg %>" alt="<%= property.title %>">
+                    <% } else { %>
+                      <% const webpFormats = firstImg.formats ? firstImg.formats.filter(f => f.mime === 'image/webp').sort((a,b)=>a.width-b.width) : []; %>
+                      <% const jpgFormats = firstImg.formats ? firstImg.formats.filter(f => f.mime === 'image/jpeg').sort((a,b)=>a.width-b.width) : []; %>
+                      <picture>
+                        <% if (webpFormats.length) { %>
+                          <source type="image/webp" srcset="<%= webpFormats.map(f => `${f.src} ${f.width}w`).join(', ') %>">
+                        <% } %>
+                        <img src="<%= firstImg.default || (jpgFormats.length ? jpgFormats[jpgFormats.length-1].src : '/placeholder.jpg') %>" srcset="<%= jpgFormats.map(f => `${f.src} ${f.width}w`).join(', ') %>" sizes="(max-width:600px) 100vw, 33vw" alt="<%= property.title %>">
+                      </picture>
+                    <% } %>
+                  <% } else { %>
+                    <img src="/placeholder.jpg" alt="<%= property.title %>">
+                  <% } %>
+                  <span class="property-type"><%= property.propertyType %></span>
+                </div>
             <div class="property-info">
               <h3><%= property.title %></h3>
               <p class="location"><%= property.area %>, <%= property.city %></p>
@@ -99,6 +119,8 @@
   </section>
 </main>
 
+<div id="filtersOverlay" class="filters-overlay" aria-hidden="true"></div>
+
 <%- include('footer'); -%>
 
 <script>
@@ -109,6 +131,57 @@
     priceInput.addEventListener('input', (e) => {
       priceDisplay.textContent = '₹' + parseInt(e.target.value).toLocaleString('en-IN');
     });
+  }
+
+  // Mobile filters toggle
+  const filtersToggle = document.getElementById('filtersToggle');
+  const filtersSidebar = document.getElementById('filtersSidebar');
+  const filtersClose = document.getElementById('filtersClose');
+  // Mobile filters toggle is handled with overlay-aware setFilterOpen() below
+
+  // overlay and close behavior
+  const filtersOverlay = document.getElementById('filtersOverlay');
+  if (filtersToggle && filtersSidebar && filtersOverlay) {
+    let prevFocus = null;
+    function setFilterOpen(open) {
+      if (open) {
+        filtersSidebar.classList.add('open');
+        filtersOverlay.classList.add('show');
+        filtersOverlay.setAttribute('aria-hidden', 'false');
+        filtersSidebar.setAttribute('aria-hidden', 'false');
+        filtersSidebar.setAttribute('role', 'dialog');
+        filtersSidebar.setAttribute('aria-modal', 'true');
+        filtersToggle.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('no-scroll');
+        filtersToggle.textContent = 'Hide filters';
+        prevFocus = document.activeElement;
+        // set focus to first focusable element in filters
+        const firstFocusable = filtersSidebar.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (firstFocusable) firstFocusable.focus();
+      } else {
+        filtersSidebar.classList.remove('open');
+        filtersOverlay.classList.remove('show');
+        filtersOverlay.setAttribute('aria-hidden', 'true');
+        filtersSidebar.setAttribute('aria-hidden', 'true');
+        filtersSidebar.removeAttribute('role');
+        filtersSidebar.removeAttribute('aria-modal');
+        filtersToggle.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('no-scroll');
+        filtersToggle.textContent = 'Show filters';
+        if (prevFocus && typeof prevFocus.focus === 'function') prevFocus.focus();
+      }
+    }
+
+    filtersToggle.addEventListener('click', function () {
+      setFilterOpen(!filtersSidebar.classList.contains('open'));
+      if (filtersSidebar.classList.contains('open')) filtersSidebar.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    filtersOverlay.addEventListener('click', function () { setFilterOpen(false); });
+    if (filtersClose) filtersClose.addEventListener('click', function () { setFilterOpen(false); });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') setFilterOpen(false); });
+    // Close sidebar when viewport grows to prevent it getting stuck as an overlay
+    window.addEventListener('resize', function () { if (window.innerWidth > 768 && filtersSidebar.classList.contains('open')) setFilterOpen(false); });
   }
 </script>
 </body>

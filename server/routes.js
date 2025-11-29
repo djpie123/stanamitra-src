@@ -4,7 +4,6 @@ import { createUser, verifyUser, findUserByEmail, updateUser, addToWishlist, rem
 import { ensureAuthenticated } from "./middleware/auth.js";
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -270,22 +269,9 @@ export async function registerRoutes(app) {
   });
 
  
-  const uploadsDir = path.join(__dirname, '../public/uploads');
-  try {
-    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-  } catch (err) {
-    console.warn('Failed to ensure uploads dir', err.message || err);
-  }
-  const storageEngine = multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, uploadsDir);
-    },
-    filename: (req, file, cb) => {
-      const safe = file.originalname.replace(/[^a-z0-9.\-]/gi, '_');
-      cb(null, `${Date.now()}-${safe}`);
-    }
-  });
-  const upload = multer({ storage: storageEngine, limits: { fileSize: 5 * 1024 * 1024 } });
+  // Use memoryStorage so we can process images in memory (no local disk writes)
+  const memoryStorage = multer.memoryStorage();
+  const upload = multer({ storage: memoryStorage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 
   app.post('/list', ensureAuthenticated, upload.array('images', 6), async (req, res) => {
@@ -299,8 +285,77 @@ export async function registerRoutes(app) {
         return res.status(400).render('list', { cities: await storage.getCities(), error: 'Please provide title, description, city and price' });
       }
 
-      const files = req.files || [];
-      const images = files.map(f => `/uploads/${f.filename}`);
+              const files = req.files || [];
+          const images = [];
+              // Try to import node-canvas dynamically — if not installed, we'll fallback to base64 conversion
+              let canvasLib = null;
+              try {
+                canvasLib = await import('canvas');
+              } catch (err) {
+                console.warn('`canvas` package not available — falling back to base64 store (no resizing).');
+                canvasLib = null;
+              }
+          for (const f of files) {
+            try {
+              // If canvas is available, use it for resizing
+              if (canvasLib && canvasLib.loadImage && canvasLib.createCanvas) {
+                const { loadImage, createCanvas } = canvasLib;
+                const img = await loadImage(f.buffer);
+                let width = img.width;
+                let height = img.height;
+                const maxWidth = 1200; // resize large images for storage/transport
+                if (width > maxWidth) {
+                  const scale = maxWidth / width;
+                  width = Math.round(width * scale);
+                  height = Math.round(height * scale);
+                }
+                const canvas = createCanvas(width, height);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                // generate multiple sizes and formats
+                const sizesWanted = [480, 800, 1200];
+                const formats = [];
+                for (const targetW of sizesWanted) {
+                  let tw = targetW;
+                  if (img.width < targetW) tw = img.width;
+                  const scale = tw / img.width;
+                  const th = Math.round(img.height * scale);
+                  const c = createCanvas(tw, th);
+                  const ctx2 = c.getContext('2d');
+                  ctx2.drawImage(img, 0, 0, tw, th);
+                  try {
+                    const webpBuffer = c.toBuffer('image/webp', { quality: 0.8 });
+                    formats.push({ width: tw, mime: 'image/webp', src: `data:image/webp;base64,${webpBuffer.toString('base64')}` });
+                  } catch (errWebp) {
+                    // ignore webp generation if unsupported
+                  }
+                  try {
+                    const jpegBuffer = c.toBuffer('image/jpeg', { quality: 0.85 });
+                    formats.push({ width: tw, mime: 'image/jpeg', src: `data:image/jpeg;base64,${jpegBuffer.toString('base64')}` });
+                  } catch (errJpeg) {
+                    // ignore jpeg errors
+                  }
+                }
+                // choose a default: prefer webp at 800 if available, else jpeg 800 else first format
+                let def = null;
+                def = formats.find(fm => fm.mime === 'image/webp' && fm.width === 800) || formats.find(fm => fm.mime === 'image/jpeg' && fm.width === 800) || formats[0] || null;
+                images.push({ filename: f.originalname, formats, default: def ? def.src : null });
+              } else {
+                // No canvas: use raw buffer converted to data uri (no size information)
+                const dataUri = `data:${f.mimetype};base64,${f.buffer.toString('base64')}`;
+                images.push({ filename: f.originalname, formats: [{ width: null, mime: f.mimetype, src: dataUri }], default: dataUri });
+              }
+            } catch (err) {
+              // Fallback: if canvas loading fails, store raw buffer as data URI using file mimetype
+              console.warn('Image processing failed, falling back to raw buffer:', err.message || err);
+              try {
+                const dataUri = `data:${f.mimetype};base64,${f.buffer.toString('base64')}`;
+                images.push(dataUri);
+              } catch (err2) {
+                console.warn('Fallback base64 conversion failed', err2.message || err2);
+              }
+            }
+          }
 
       const propertyData = {
         title: title.trim(),
@@ -339,7 +394,15 @@ export async function registerRoutes(app) {
       if (!propertyId) return res.status(400).json({ error: 'propertyId required' });
       const property = await storage.getPropertyById(propertyId);
       if (!property) return res.status(404).json({ error: 'Property not found' });
-      const payload = { id: propertyId, title: property.title, city: property.city, price: property.price, image: (property.images && property.images[0]) || '' };
+      let imagePreview = '';
+      if (property.images && property.images[0]) {
+        if (typeof property.images[0] === 'string') {
+          imagePreview = property.images[0];
+        } else {
+          imagePreview = property.images[0].default || (property.images[0].formats && property.images[0].formats.length ? property.images[0].formats[0].src : '');
+        }
+      }
+      const payload = { id: propertyId, title: property.title, city: property.city, price: property.price, image: imagePreview };
       const ok = await addToWishlist(req.session.userEmail, payload);
       if (!ok) return res.status(500).json({ error: 'Failed to add to wishlist' });
       

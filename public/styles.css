@@ -11,6 +11,7 @@
   --secondary-color: #0066cc;
   --accent-color: #ffd700;
   --text-primary: #1a1a1a;
+  --text-dark: #111111;
   --text-secondary: #555555;
   --text-light: #999999;
   --bg-light: #f5f7fa;
@@ -333,6 +334,9 @@ body {
   border: 2px solid var(--border-color);
 }
 
+.btn-large { display: inline-block; width: 100%; padding: 0.9rem 1rem; border-radius: var(--radius-md); font-weight: 700; }
+.btn-large + .btn-large { margin-top: 0.5rem; }
+
 .btn-secondary:hover {
   background: var(--bg-white);
   border-color: var(--primary-color);
@@ -450,6 +454,24 @@ body {
 .property-card:hover .property-image img {
   transform: scale(1.08);
 }
+
+/* Mobile filter overlay */
+.filters-overlay {
+  display: block; /* present in DOM so transition works */
+  opacity: 0;
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 990;
+  transition: opacity 0.2s ease-in-out;
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+.filters-overlay.show { opacity: 1; pointer-events: all; }
 
 .property-badge {
   position: absolute;
@@ -964,6 +986,7 @@ body {
   gap: 2rem;
   padding: 2rem 0;
   min-height: calc(100vh - 200px);
+  min-width: 0;
 }
 
 .filters-sidebar {
@@ -975,6 +998,8 @@ body {
   height: fit-content;
   position: sticky;
   top: 90px;
+  z-index: 995;
+  min-width: 0;
 }
 
 .filters-sidebar h3 {
@@ -1085,6 +1110,7 @@ body {
 
 .properties-main {
   flex: 1;
+  min-width: 0;
 }
 
 .properties-header {
@@ -1105,9 +1131,10 @@ body {
 
 .properties-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 2rem;
   margin-bottom: 3rem;
+  min-width: 0;
 }
 
 .property-card {
@@ -1122,6 +1149,7 @@ body {
   text-decoration: none;
   color: inherit;
   height: 100%;
+  min-width: 0;
 }
 
 .property-card:hover {
@@ -1143,6 +1171,9 @@ body {
   object-fit: cover;
   transition: var(--transition);
 }
+
+/* Prevent global overflow issues caused by large images */
+img { max-width: 100%; height: auto; }
 
 .property-card:hover .property-image img {
   transform: scale(1.08);
@@ -1367,6 +1398,55 @@ body {
   flex: 0 0 auto;
   padding: 0.875rem 2rem;
 }
+/* ========= AUTH FORM (LOGIN / REGISTER) ========= */
+.auth-card {
+  max-width: 520px;
+  margin: 2rem auto;
+  background: var(--bg-white);
+  padding: 2rem 2.25rem;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+}
+.auth-card .auth-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+.auth-card .auth-header h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.auth-card .auth-header p {
+  color: var(--text-secondary);
+  margin: 0;
+}
+.input-container { margin-bottom: 1rem; }
+.input-field {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  transition: var(--transition-fast);
+  background: var(--bg-lighter);
+}
+.input-field:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.06); }
+.input-label { display:block; margin-bottom: 6px; font-weight: 600; color: var(--text-primary); }
+.form-footer { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 0.5rem; }
+.remember { display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); }
+.password-toggle { cursor: pointer; color: var(--primary-color); font-weight: 700; font-size: 0.9rem; }
+.helper-text { font-size: 0.85rem; color: var(--text-light); margin-top: 0.45rem; }
+.auth-links { text-align: center; margin-top: 1rem; color: var(--text-secondary); font-size: 0.95rem; }
+.auth-links a { color: var(--primary-color); text-decoration: none; font-weight:600; }
+.input-error { color: var(--danger-color); font-size: 0.85rem; margin-top: 0.5rem; }
+.btn-full { width: 100%; padding: 12px 16px; }
+
+@media (max-width: 480px) {
+  .auth-card { padding: 1.25rem; margin: 1rem; }
+}
 
 .form-actions a {
   color: var(--text-secondary);
@@ -1392,6 +1472,20 @@ body {
   
   .filters-sidebar {
     padding: 1.5rem;
+    box-sizing: border-box; /* ensure padding doesn't add width */
+  }
+  /* On small screens, when open, fix the sidebar as an overlay */
+  .filters-sidebar.open {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    top: 90px;
+    z-index: 999;
+    max-height: calc(100vh - 120px);
+    overflow: auto;
+    border-radius: var(--radius-lg);
+    box-sizing: border-box;
+    max-width: calc(100% - 2rem);
   }
   
   .list-property-card {
@@ -1439,5 +1533,159 @@ body {
   }
   
   .properties-grid { gap: 1rem; }
+}
+
+/* ============= RESPONSIVE: Small screens improved behavior ============= */
+@media (max-width: 768px) {
+  /* Stack filters on top of properties */
+  .properties-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem 0;
+  }
+  .filters-sidebar {
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+    top: 0;
+    box-shadow: none;
+    border-left: none;
+    border-right: none;
+    border-radius: var(--radius-md);
+    transition: max-height 0.25s ease-in-out, opacity 0.25s ease-in-out;
+    overflow: hidden;
+    overflow-x: hidden; /* prevent horizontal scroll */
+    max-height: 0;
+    opacity: 0;
+  }
+  /* When open (toggled via JS), show filters */
+  .filters-sidebar.open {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    max-height: 1200px; /* large enough */
+    opacity: 1;
+    overflow: auto;
+    overflow-x: hidden;
+    z-index: 999;
+    box-sizing: border-box;
+    max-width: calc(100% - 2rem);
+  }
+
+/* Prevent body scroll when overlay is shown */
+body.no-scroll { overflow: hidden; }
+  .filters-toggle-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-white);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+  .properties-header { margin: 1rem 0; }
+  .property-image { height: 200px; }
+  .properties-grid { gap: 1rem; }
+  .property-card { padding: 0; }
+  .property-info { padding: 1rem; }
+}
+
+/* Make sure content inside the filters sidebar doesn't exceed the container */
+.filters-sidebar * { max-width: 100%; box-sizing: border-box; }
+.filters-sidebar select, .filters-sidebar input, .filters-sidebar textarea, .filters-sidebar form button { width: 100%; max-width: 100%; }
+.filters-sidebar label { word-break: break-word; }
+/* Keep header buttons compact */
+.filters-sidebar .btn-outline { width: auto; }
+
+@media (max-width: 480px) {
+  .property-image { height: 160px; }
+  .list-property-card {
+    padding: 1.5rem;
+    margin: 1rem 0;
+  }
+  .form-row { grid-template-columns: 1fr; }
+  .form-actions { flex-direction: column; gap: 0.5rem; }
+  .form-actions .btn-primary { width: 100%; }
+  .btn-large { width: 100%; }
+}
+
+/* ============= Property Detail styles ============= */
+.property-detail {
+  display: grid;
+  gap: 2rem;
+  padding: 2rem 0;
+}
+.property-hero {
+  display: block;
+}
+.image-gallery {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 1rem;
+}
+.image-gallery .main-image {
+  width: 100%;
+  height: 420px;
+  object-fit: cover;
+  display: block;
+}
+.thumbnail-images {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.5rem 0;
+}
+.thumbnail-images .thumbnail {
+  width: 84px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+.thumbnail-images .thumbnail:hover { border-color: rgba(0,0,0,0.1); }
+
+.image-preview img { width: 96px; height: 64px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--border-light); display: inline-block; }
+
+.property-content {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 2rem;
+}
+.property-left { min-width: 0; }
+.property-right { align-self: start; }
+.property-header h1 { font-size: 1.7rem; margin-bottom: 0.25rem; }
+.location { margin-bottom: 0.75rem; color: var(--text-secondary); }
+.details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem; }
+.amenities-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.amenity-badge { background: var(--bg-lighter); color: var(--text-secondary); padding: 0.4rem 0.8rem; border-radius: var(--radius-full); border: 1px solid var(--border-light); }
+
+.booking-card { position: sticky; top: 90px; }
+
+@media (max-width: 1024px) {
+  .image-gallery .main-image { height: 360px; }
+  .property-content { grid-template-columns: 1fr 320px; }
+}
+
+@media (max-width: 768px) {
+  .image-gallery .main-image { height: 320px; }
+  .property-content { grid-template-columns: 1fr; }
+  .property-right { order: 2; position: relative; top: 0; }
+  .booking-card { position: relative; top: 0; margin-top: 1rem; }
+  .thumbnail-images { gap: 0.4rem; }
+  .thumbnail-images .thumbnail { width: 64px; height: 48px; }
+}
+
+@media (max-width: 480px) {
+  .image-gallery .main-image { height: 240px; }
+  .thumbnail-images .thumbnail { width: 56px; height: 40px; }
+  .property-header h1 { font-size: 1.4rem; }
+  .details-grid { grid-template-columns: 1fr; }
 }
 
