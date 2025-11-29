@@ -1557,6 +1557,8 @@ img { max-width: 100%; height: auto; }
     overflow-x: hidden; /* prevent horizontal scroll */
     max-height: 0;
     opacity: 0;
+    transform: translateY(-12px);
+    transition: transform 0.25s ease-in-out, opacity 0.25s ease-in-out, max-height 0.25s ease-in-out;
   }
   /* When open (toggled via JS), show filters */
   .filters-sidebar.open {
@@ -1570,6 +1572,7 @@ img { max-width: 100%; height: auto; }
     z-index: 999;
     box-sizing: border-box;
     max-width: calc(100% - 2rem);
+    transform: translateY(0);
   }
 
 /* Prevent body scroll when overlay is shown */

@@ -287,66 +287,87 @@ export async function registerRoutes(app) {
 
               const files = req.files || [];
           const images = [];
-              // Try to import node-canvas dynamically — if not installed, we'll fallback to base64 conversion
-              let canvasLib = null;
-              try {
-                canvasLib = await import('canvas');
-              } catch (err) {
-                console.warn('`canvas` package not available — falling back to base64 store (no resizing).');
-                canvasLib = null;
-              }
+              // Try to import 'sharp' first (works well in Vercel), else try 'jimp', else fallback to base64
+                  let sharpLib = null;
+                  let jimpLib = null;
+                  try {
+                    sharpLib = await import('sharp');
+                  } catch (err) {
+                    console.warn('`sharp` package not available. Will try `jimp` as fallback.');
+                    sharpLib = null;
+                  }
+                  if (!sharpLib) {
+                    try {
+                      const jimpModule = await import('jimp');
+                      jimpLib = jimpModule.default || jimpModule;
+                    } catch (err) {
+                      console.warn('`jimp` package not available — falling back to base64 store (no resizing).');
+                      jimpLib = null;
+                    }
+                  }
           for (const f of files) {
             try {
-              // If canvas is available, use it for resizing
-              if (canvasLib && canvasLib.loadImage && canvasLib.createCanvas) {
-                const { loadImage, createCanvas } = canvasLib;
-                const img = await loadImage(f.buffer);
-                let width = img.width;
-                let height = img.height;
-                const maxWidth = 1200; // resize large images for storage/transport
-                if (width > maxWidth) {
-                  const scale = maxWidth / width;
-                  width = Math.round(width * scale);
-                  height = Math.round(height * scale);
-                }
-                const canvas = createCanvas(width, height);
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                // generate multiple sizes and formats
+              // If sharp is available, prefer it for resizing
+              if (sharpLib && typeof sharpLib.default === 'function') {
+                const sharp = sharpLib.default;
                 const sizesWanted = [480, 800, 1200];
                 const formats = [];
                 for (const targetW of sizesWanted) {
-                  let tw = targetW;
-                  if (img.width < targetW) tw = img.width;
-                  const scale = tw / img.width;
-                  const th = Math.round(img.height * scale);
-                  const c = createCanvas(tw, th);
-                  const ctx2 = c.getContext('2d');
-                  ctx2.drawImage(img, 0, 0, tw, th);
                   try {
-                    const webpBuffer = c.toBuffer('image/webp', { quality: 0.8 });
-                    formats.push({ width: tw, mime: 'image/webp', src: `data:image/webp;base64,${webpBuffer.toString('base64')}` });
-                  } catch (errWebp) {
-                    // ignore webp generation if unsupported
-                  }
-                  try {
-                    const jpegBuffer = c.toBuffer('image/jpeg', { quality: 0.85 });
-                    formats.push({ width: tw, mime: 'image/jpeg', src: `data:image/jpeg;base64,${jpegBuffer.toString('base64')}` });
-                  } catch (errJpeg) {
-                    // ignore jpeg errors
-                  }
+                    const resizeW = Math.min(targetW, f.buffer ? (await sharp(f.buffer).metadata()).width : targetW);
+                    // create webp
+                    const webpBuf = await sharp(f.buffer).resize({ width: resizeW }).webp({ quality: 80 }).toBuffer();
+                    formats.push({ width: resizeW, mime: 'image/webp', src: `data:image/webp;base64,${webpBuf.toString('base64')}` });
+                    // create jpeg
+                    const jpegBuf = await sharp(f.buffer).resize({ width: resizeW }).jpeg({ quality: 85 }).toBuffer();
+                    formats.push({ width: resizeW, mime: 'image/jpeg', src: `data:image/jpeg;base64,${jpegBuf.toString('base64')}` });
+                  } catch (errInner) { console.warn('sharp resize failed for target', targetW, errInner && errInner.message); }
                 }
-                // choose a default: prefer webp at 800 if available, else jpeg 800 else first format
-                let def = null;
-                def = formats.find(fm => fm.mime === 'image/webp' && fm.width === 800) || formats.find(fm => fm.mime === 'image/jpeg' && fm.width === 800) || formats[0] || null;
+                let def = formats.find(fm => fm.mime === 'image/webp' && fm.width === 800) || formats.find(fm => fm.mime === 'image/jpeg' && fm.width === 800) || formats[0] || null;
+                images.push({ filename: f.originalname, formats, default: def ? def.src : null });
+              } else if (jimpLib) {
+                const Jimp = jimpLib;
+                const sizesWanted = [480, 800, 1200];
+                const formats = [];
+                try {
+                  const img = await Jimp.read(f.buffer);
+                  for (const targetW of sizesWanted) {
+                    let tw = targetW;
+                    if (img.bitmap.width < targetW) tw = img.bitmap.width;
+                    const cloned = img.clone().resize(tw, Jimp.AUTO);
+                    const jpegBuffer = await cloned.getBufferAsync(Jimp.MIME_JPEG);
+                    formats.push({ width: tw, mime: 'image/jpeg', src: `data:image/jpeg;base64,${jpegBuffer.toString('base64')}` });
+                  }
+                } catch (errJimp) {
+                  console.warn('jimp processing failed', errJimp && errJimp.message);
+                }
+                let def = formats.find(fm => fm.mime === 'image/jpeg' && fm.width === 800) || formats[0] || null;
+                images.push({ filename: f.originalname, formats, default: def ? def.src : null });
+              } else if (jimpLib) {
+                const Jimp = jimpLib;
+                const sizesWanted = [480, 800, 1200];
+                const formats = [];
+                try {
+                  const img = await Jimp.read(f.buffer);
+                  for (const targetW of sizesWanted) {
+                    let tw = targetW;
+                    if (img.bitmap.width < targetW) tw = img.bitmap.width;
+                    const cloned = img.clone().resize(tw, Jimp.AUTO);
+                    const jpegBuffer = await cloned.getBufferAsync(Jimp.MIME_JPEG);
+                    formats.push({ width: tw, mime: 'image/jpeg', src: `data:image/jpeg;base64,${jpegBuffer.toString('base64')}` });
+                  }
+                } catch (errJimp) {
+                  console.warn('jimp processing failed', errJimp && errJimp.message);
+                }
+                let def = formats.find(fm => fm.mime === 'image/jpeg' && fm.width === 800) || formats[0] || null;
                 images.push({ filename: f.originalname, formats, default: def ? def.src : null });
               } else {
-                // No canvas: use raw buffer converted to data uri (no size information)
+                // No image processing lib available: use raw buffer converted to data uri (no size information)
                 const dataUri = `data:${f.mimetype};base64,${f.buffer.toString('base64')}`;
                 images.push({ filename: f.originalname, formats: [{ width: null, mime: f.mimetype, src: dataUri }], default: dataUri });
               }
             } catch (err) {
-              // Fallback: if canvas loading fails, store raw buffer as data URI using file mimetype
+              // Fallback: if image processing fails, store raw buffer as data URI using file mimetype
               console.warn('Image processing failed, falling back to raw buffer:', err.message || err);
               try {
                 const dataUri = `data:${f.mimetype};base64,${f.buffer.toString('base64')}`;
