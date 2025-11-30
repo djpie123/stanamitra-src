@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('header'); -%>
+<body>
+<%- include('nav'); -%>
+<main class="container">
+  <div class="list-property-card" style="max-width:800px;margin:2rem auto;">
+    <h2>Booking Management</h2>
+    <p><strong>Property:</strong> <%= booking.propertyTitle %></p>
+    <p><strong>Booking ID:</strong> <%= booking.id %></p>
+    <p><strong>Status:</strong> <%= booking.status %></p>
+
+    <section style="margin-top:1rem;">
+      <h3>Check-in QR</h3>
+      <% if (qrDataUrl) { %>
+        <img src="<%= qrDataUrl %>" alt="Check-in QR" style="width:220px;height:220px;border-radius:8px;border:1px solid var(--border-light);" />
+        <p style="margin-top:0.5rem;">Use this QR code at check-in. It contains booking details for quick verification.</p>
+      <% } else { %>
+        <p>QR code generation not available.</p>
+      <% } %>
+    </section>
+
+    <section style="margin-top:1.5rem;">
+      <h3>Meal Preference</h3>
+      <form id="mealForm">
+        <label style="display:block;margin-bottom:0.5rem;font-weight:600;">Preference Type</label>
+        <select name="mealPreference" id="mealPreference" style="padding:0.6rem;border:1px solid #ddd;border-radius:8px;width:100%;margin-bottom:1.5rem">
+          <option value="">No preference</option>
+          <option value="veg" <%= booking.mealPreference === 'veg' ? 'selected' : '' %>>Vegetarian</option>
+          <option value="nonveg" <%= booking.mealPreference === 'nonveg' ? 'selected' : '' %>>Non-Vegetarian</option>
+          <option value="vegan" <%= booking.mealPreference === 'vegan' ? 'selected' : '' %>>Vegan</option>
+        </select>
+
+        <label style="display:block;margin-bottom:1rem;font-weight:600;">Meal Times & Dishes</label>
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          <div style="display:flex;gap:0.75rem;align-items:center;">
+            <input type="checkbox" id="breakfastCheck" name="breakfast" style="cursor:pointer;width:18px;height:18px;" />
+            <label for="breakfastCheck" style="font-weight:500;cursor:pointer;">Breakfast</label>
+            <input type="text" id="breakfastDish" placeholder="Dish name" style="flex:1;padding:0.5rem;border:1px solid #ddd;border-radius:6px;" />
+          </div>
+          <div style="display:flex;gap:0.75rem;align-items:center;">
+            <input type="checkbox" id="lunchCheck" name="lunch" style="cursor:pointer;width:18px;height:18px;" />
+            <label for="lunchCheck" style="font-weight:500;cursor:pointer;">Lunch</label>
+            <input type="text" id="lunchDish" placeholder="Dish name" style="flex:1;padding:0.5rem;border:1px solid #ddd;border-radius:6px;" />
+          </div>
+          <div style="display:flex;gap:0.75rem;align-items:center;">
+            <input type="checkbox" id="dinnerCheck" name="dinner" style="cursor:pointer;width:18px;height:18px;" />
+            <label for="dinnerCheck" style="font-weight:500;cursor:pointer;">Dinner</label>
+            <input type="text" id="dinnerDish" placeholder="Dish name" style="flex:1;padding:0.5rem;border:1px solid #ddd;border-radius:6px;" />
+          </div>
+          <div style="display:flex;gap:0.75rem;align-items:center;">
+            <input type="checkbox" id="snacksCheck" name="snacks" style="cursor:pointer;width:18px;height:18px;" />
+            <label for="snacksCheck" style="font-weight:500;cursor:pointer;">Snacks</label>
+            <input type="text" id="snacksDish" placeholder="Dish name" style="flex:1;padding:0.5rem;border:1px solid #ddd;border-radius:6px;" />
+          </div>
+        </div>
+
+        <div style="margin-top:1rem;display:flex;gap:8px;">
+          <button type="button" id="saveMeal" class="btn btn-primary">Save Preference</button>
+          <span id="mealStatus" style="align-self:center;color:var(--text-secondary);"></span>
+        </div>
+      </form>
+    </section>
+
+    <section style="margin-top:1.5rem;">
+      <h3>Register a Complaint</h3>
+      <form id="complaintForm">
+        <textarea name="message" id="complaintMessage" rows="4" style="width:100%;padding:1rem;border:1px solid #ddd;border-radius:8px;" placeholder="Describe your issue"></textarea>
+        <div style="margin-top:0.75rem;display:flex;gap:8px;">
+          <button type="button" id="submitComplaint" class="btn btn-danger">Submit Complaint</button>
+          <span id="complaintStatus" style="align-self:center;color:var(--text-secondary);"></span>
+        </div>
+      </form>
+      <p style="margin-top:0.5rem;color:var(--text-light);font-size:0.9rem;">Complaints will be addressed within 1-2 hours.</p>
+
+      <div id="complaintsList" style="margin-top:1rem;">
+        <h4>Your Complaints</h4>
+        <% if (complaints && complaints.length > 0) { %>
+          <% complaints.forEach(c => { %>
+            <div style="padding:0.75rem;border:1px solid var(--border-light);border-radius:8px;margin-bottom:0.5rem;">
+              <p style="margin:0;color:var(--text-primary);font-weight:600;">Status: <%= c.status %></p>
+              <p style="margin:0.25rem 0;color:var(--text-secondary);">Submitted: <%= new Date(c.createdAt).toLocaleString() %></p>
+              <p style="margin-top:0.5rem;color:var(--text-secondary);"><%= c.message %></p>
+              <p style="margin-top:0.5rem;color:var(--text-secondary);font-size:0.9rem;">Expected resolution: <%= c.expectedResolveBy ? new Date(c.expectedResolveBy).toLocaleString() : '—' %></p>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <p>No complaints registered yet.</p>
+        <% } %>
+      </div>
+    </section>
+
+    <div style="margin-top:1.5rem;">
+      <a href="/profile" class="btn btn-outline">Back to profile</a>
+    </div>
+  </div>
+</main>
+
+<%- include('footer'); -%>
+
+<script>
+  document.getElementById('saveMeal').addEventListener('click', async function () {
+    const preference = document.getElementById('mealPreference').value;
+    const meals = {
+      breakfast: document.getElementById('breakfastCheck').checked ? document.getElementById('breakfastDish').value.trim() || null : null,
+      lunch: document.getElementById('lunchCheck').checked ? document.getElementById('lunchDish').value.trim() || null : null,
+      dinner: document.getElementById('dinnerCheck').checked ? document.getElementById('dinnerDish').value.trim() || null : null,
+      snacks: document.getElementById('snacksCheck').checked ? document.getElementById('snacksDish').value.trim() || null : null
+    };
+    const id = '<%= booking.id %>';
+    document.getElementById('mealStatus').textContent = 'Saving...';
+    const resp = await fetch(`/booking/meal/${id}`, {
+      method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ mealPreference: preference, meals })
+    });
+    const json = await resp.json();
+    if (json && json.success) {
+      document.getElementById('mealStatus').textContent = 'Saved';
+      setTimeout(() => document.getElementById('mealStatus').textContent = '', 2000);
+    } else {
+      document.getElementById('mealStatus').textContent = 'Failed to save';
+    }
+  });
+
+  document.getElementById('submitComplaint').addEventListener('click', async function () {
+    const msg = document.getElementById('complaintMessage').value.trim();
+    if (!msg) return (document.getElementById('complaintStatus').textContent = 'Enter a message');
+    const id = '<%= booking.id %>';
+    document.getElementById('complaintStatus').textContent = 'Submitting...';
+    const resp = await fetch(`/booking/complaint/${id}`, {
+      method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ message: msg })
+    });
+    const json = await resp.json();
+    if (json && json.success) {
+      document.getElementById('complaintStatus').textContent = 'Submitted';
+    
+      const c = json.complaint;
+      const cont = document.getElementById('complaintsList');
+      const node = document.createElement('div');
+      node.style.padding = '0.75rem'; node.style.border = '1px solid var(--border-light)'; node.style.borderRadius = '8px'; node.style.marginBottom = '0.5rem';
+      node.innerHTML = `<p style="margin:0;color:var(--text-primary);font-weight:600;">Status: ${c.status}</p><p style="margin:0.25rem 0;color:var(--text-secondary);">Submitted: ${new Date(c.createdAt).toLocaleString()}</p><p style="margin-top:0.5rem;color:var(--text-secondary);">${c.message}</p>`;
+      cont.appendChild(node);
+      document.getElementById('complaintMessage').value = '';
+    } else {
+      document.getElementById('complaintStatus').textContent = json && json.error ? json.error : 'Failed to submit';
+    }
+  });
+</script>
+</body>
+</html>

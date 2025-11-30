@@ -133,8 +133,7 @@ export default async function runApp(setup) {
     next();
   });
 
-    // Detect which image processing libs are available (helpful for Vercel/runtime debugging)
-    (async function detectImageLibs() {
+    
       try {
         const sharpModule = await import('sharp');
         log('Detected `sharp` available — server-side resizing will prefer sharp', 'startup');

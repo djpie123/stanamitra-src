@@ -163,7 +163,8 @@ export async function createBooking(email, bookingData) {
     aadhaarNumber: bookingData.aadhaarNumber,
     bookingDate: new Date(),
     freeMonthEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 
-    status: 'confirmed'
+    status: 'confirmed',
+    mealPreference: bookingData.mealPreference || null
   };
   
   try {
@@ -178,6 +179,87 @@ export async function createBooking(email, bookingData) {
     user.bookings = user.bookings || [];
     user.bookings.push(booking);
     return booking;
+  }
+}
+
+export async function getBookingById(bookingId) {
+  try {
+    await connect();
+    return await db.collection('bookings').findOne({ id: bookingId });
+  } catch (err) {
+    console.error('MongoDB getBookingById failed:', err.message);
+    const user = Array.from(memUsers.values()).find(u => u.bookings && u.bookings.find(b => b.id === bookingId));
+    if (!user) return null;
+    return user.bookings.find(b => b.id === bookingId) || null;
+  }
+}
+
+export async function updateBookingMealPreference(email, bookingId, mealPreference, meals = null) {
+  try {
+    await connect();
+    const result = await db.collection('bookings').updateOne({ id: bookingId, email }, { $set: { mealPreference, meals, updatedAt: new Date() } });
+    return result.matchedCount > 0;
+  } catch (err) {
+    console.error('MongoDB updateBookingMealPreference failed:', err.message);
+    const user = Array.from(memUsers.values()).find(u => u.email === email);
+    if (!user || !user.bookings) return false;
+    const booking = user.bookings.find(b => b.id === bookingId);
+    if (!booking) return false;
+    booking.mealPreference = mealPreference;
+    booking.meals = meals;
+    booking.updatedAt = new Date();
+    return true;
+  }
+}
+
+export async function createComplaint(email, bookingId, complaintData) {
+  const complaint = {
+    id: `complaint-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    bookingId,
+    email,
+    message: complaintData.message,
+    status: 'open',
+    createdAt: new Date(),
+    expectedResolveBy: new Date(Date.now() + 2 * 60 * 60 * 1000) // 2 hours
+  };
+  try {
+    await connect();
+    const res = await db.collection('complaints').insertOne(complaint);
+    return { ...complaint, _id: res.insertedId };
+  } catch (err) {
+    console.error('MongoDB createComplaint failed:', err.message);
+    const user = Array.from(memUsers.values()).find(u => u.email === email);
+    if (!user) return null;
+    user.complaints = user.complaints || [];
+    user.complaints.push(complaint);
+    return complaint;
+  }
+}
+
+export async function getComplaintsByBookingId(bookingId) {
+  try {
+    await connect();
+    const complaints = await db.collection('complaints').find({ bookingId }).toArray();
+   
+    for (const c of complaints) {
+      if (c.status === 'open' && c.expectedResolveBy && new Date(c.expectedResolveBy) < now) {
+        await db.collection('complaints').updateOne({ id: c.id }, { $set: { status: 'resolved', resolvedAt: now } });
+        c.status = 'resolved';
+        c.resolvedAt = now;
+      }
+    }
+    return complaints;
+  } catch (err) {
+    console.error('MongoDB getComplaintsByBookingId failed:', err.message);
+    const users = Array.from(memUsers.values());
+    const found = [];
+    users.forEach(u => {
+      (u.complaints || []).forEach(c => { if (c.bookingId === bookingId) found.push(c); });
+    });
+   
+    const now = new Date();
+    found.forEach(c => { if (c.status === 'open' && c.expectedResolveBy && new Date(c.expectedResolveBy) < now) { c.status = 'resolved'; c.resolvedAt = now; } });
+    return found;
   }
 }
 
@@ -322,4 +404,4 @@ export async function getAllReviews() {
   }
 }
 
-export default { connect, findUserByEmail, createUser, verifyUser, updateUser, addToWishlist, removeFromWishlist, createBooking, getBookingsByUser, cancelBooking, getProperties, getPropertyById, getCities, createProperty, createReview, getReviewsByPropertyId, getAllReviews };
+export default { connect, findUserByEmail, createUser, verifyUser, updateUser, addToWishlist, removeFromWishlist, createBooking, getBookingsByUser, cancelBooking, getBookingById, updateBookingMealPreference, createComplaint, getComplaintsByBookingId, getProperties, getPropertyById, getCities, createProperty, createReview, getReviewsByPropertyId, getAllReviews };

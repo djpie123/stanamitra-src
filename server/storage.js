@@ -341,8 +341,55 @@ export class MemStorage {
 
   async createBooking(booking) {
     const id = randomUUID();
-    this.bookings.set(id, { id, ...booking });
-    return { id, ...booking };
+    const newBooking = { id, ...booking, createdAt: new Date(), status: booking.status || 'confirmed', mealPreference: booking.mealPreference || null };
+    this.bookings.set(id, newBooking);
+    return newBooking;
+  }
+
+  async getBookingById(bookingId) {
+    const dbBooking = await auth.getBookingById(bookingId);
+    if (dbBooking) return dbBooking;
+    return this.bookings.get(bookingId) || null;
+  }
+
+  async updateBookingMealPreference(email, bookingId, mealPreference, meals = null) {
+    const ok = await auth.updateBookingMealPreference(email, bookingId, mealPreference, meals);
+    if (ok) return true;
+    
+    const booking = this.bookings.get(bookingId);
+    if (!booking) return false;
+    booking.mealPreference = mealPreference;
+    booking.meals = meals;
+    booking.updatedAt = new Date();
+    this.bookings.set(bookingId, booking);
+    return true;
+  }
+
+  async createComplaint(email, bookingId, complaintData) {
+    const dbComplaint = await auth.createComplaint(email, bookingId, complaintData);
+    if (dbComplaint) return dbComplaint;
+    
+    const complaint = {
+      id: `complaint-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      bookingId,
+      email,
+      message: complaintData.message,
+      status: 'open',
+      createdAt: new Date(),
+      expectedResolveBy: new Date(Date.now() + 2 * 60 * 60 * 1000)
+    };
+    const key = complaint.id;
+    this.complaints = this.complaints || new Map();
+    this.complaints.set(key, complaint);
+    return complaint;
+  }
+
+  async getComplaintsByBookingId(bookingId) {
+    const dbRes = await auth.getComplaintsByBookingId(bookingId);
+    if (dbRes) return dbRes;
+    const arr = []; if (!this.complaints) return arr;
+    for (const c of this.complaints.values()) if (c.bookingId === bookingId) arr.push(c);
+    return arr;
   }
 
   async getBookingsByUser(email) {

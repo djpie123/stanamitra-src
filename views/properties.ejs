@@ -133,13 +133,13 @@
     });
   }
 
-  // Mobile filters toggle
+ 
   const filtersToggle = document.getElementById('filtersToggle');
   const filtersSidebar = document.getElementById('filtersSidebar');
   const filtersClose = document.getElementById('filtersClose');
-  // Mobile filters toggle is handled with overlay-aware setFilterOpen() below
+ 
 
-  // overlay and close behavior
+  
   const filtersOverlay = document.getElementById('filtersOverlay');
   if (filtersToggle && filtersSidebar && filtersOverlay) {
     let prevFocus = null;
@@ -155,7 +155,7 @@
         document.body.classList.add('no-scroll');
         filtersToggle.textContent = 'Hide filters';
         prevFocus = document.activeElement;
-        // set focus to first focusable element in filters
+        
         const firstFocusable = filtersSidebar.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
         if (firstFocusable) firstFocusable.focus();
       } else {
@@ -180,7 +180,7 @@
     filtersOverlay.addEventListener('click', function () { setFilterOpen(false); });
     if (filtersClose) filtersClose.addEventListener('click', function () { setFilterOpen(false); });
     document.addEventListener('keydown', function(e) { if (e.key === 'Escape') setFilterOpen(false); });
-    // Close sidebar when viewport grows to prevent it getting stuck as an overlay
+    
     window.addEventListener('resize', function () { if (window.innerWidth > 768 && filtersSidebar.classList.contains('open')) setFilterOpen(false); });
   }
 </script>

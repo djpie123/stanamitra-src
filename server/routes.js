@@ -269,7 +269,7 @@ export async function registerRoutes(app) {
   });
 
  
-  // Use memoryStorage so we can process images in memory (no local disk writes)
+ 
   const memoryStorage = multer.memoryStorage();
   const upload = multer({ storage: memoryStorage, limits: { fileSize: 5 * 1024 * 1024 } });
 
@@ -287,7 +287,7 @@ export async function registerRoutes(app) {
 
               const files = req.files || [];
           const images = [];
-              // Try to import 'sharp' first (works well in Vercel), else try 'jimp', else fallback to base64
+             
                   let sharpLib = null;
                   let jimpLib = null;
                   try {
@@ -307,7 +307,7 @@ export async function registerRoutes(app) {
                   }
           for (const f of files) {
             try {
-              // If sharp is available, prefer it for resizing
+            
               if (sharpLib && typeof sharpLib.default === 'function') {
                 const sharp = sharpLib.default;
                 const sizesWanted = [480, 800, 1200];
@@ -315,10 +315,10 @@ export async function registerRoutes(app) {
                 for (const targetW of sizesWanted) {
                   try {
                     const resizeW = Math.min(targetW, f.buffer ? (await sharp(f.buffer).metadata()).width : targetW);
-                    // create webp
+                   
                     const webpBuf = await sharp(f.buffer).resize({ width: resizeW }).webp({ quality: 80 }).toBuffer();
                     formats.push({ width: resizeW, mime: 'image/webp', src: `data:image/webp;base64,${webpBuf.toString('base64')}` });
-                    // create jpeg
+                    
                     const jpegBuf = await sharp(f.buffer).resize({ width: resizeW }).jpeg({ quality: 85 }).toBuffer();
                     formats.push({ width: resizeW, mime: 'image/jpeg', src: `data:image/jpeg;base64,${jpegBuf.toString('base64')}` });
                   } catch (errInner) { console.warn('sharp resize failed for target', targetW, errInner && errInner.message); }
@@ -362,12 +362,12 @@ export async function registerRoutes(app) {
                 let def = formats.find(fm => fm.mime === 'image/jpeg' && fm.width === 800) || formats[0] || null;
                 images.push({ filename: f.originalname, formats, default: def ? def.src : null });
               } else {
-                // No image processing lib available: use raw buffer converted to data uri (no size information)
+              
                 const dataUri = `data:${f.mimetype};base64,${f.buffer.toString('base64')}`;
                 images.push({ filename: f.originalname, formats: [{ width: null, mime: f.mimetype, src: dataUri }], default: dataUri });
               }
             } catch (err) {
-              // Fallback: if image processing fails, store raw buffer as data URI using file mimetype
+              
               console.warn('Image processing failed, falling back to raw buffer:', err.message || err);
               try {
                 const dataUri = `data:${f.mimetype};base64,${f.buffer.toString('base64')}`;
@@ -534,6 +534,64 @@ export async function registerRoutes(app) {
     } catch (error) {
       console.error("Error rendering booking page:", error);
       res.status(500).send("Error loading booking page");
+    }
+  });
+
+  app.get('/booking/admin/:bookingId', ensureAuthenticated, async (req, res) => {
+    try {
+      const { bookingId } = req.params;
+      const booking = await storage.getBookingById(bookingId);
+      if (!booking) return res.status(404).send('Booking not found');
+      if (booking.email !== req.session.userEmail) return res.status(403).send('Forbidden');
+
+      
+      let qrDataUrl = null;
+      try {
+        const qrcode = await import('qrcode');
+        const payload = JSON.stringify({ bookingId: booking.id, email: booking.email, propertyId: booking.propertyId });
+        qrDataUrl = await qrcode.toDataURL(payload);
+      } catch (err) {
+        console.warn('QR generation failed', err && err.message);
+      }
+
+      const complaints = await storage.getComplaintsByBookingId(bookingId);
+      res.render('booking-admin', { booking, qrDataUrl, complaints });
+    } catch (err) {
+      console.error('Error rendering booking admin', err);
+      return res.status(500).send('Error loading admin page');
+    }
+  });
+
+  app.post('/booking/meal/:bookingId', ensureAuthenticated, async (req, res) => {
+    try {
+      const { bookingId } = req.params;
+      const { mealPreference, meals } = req.body;
+      const booking = await storage.getBookingById(bookingId);
+      if (!booking) return res.status(404).json({ error: 'Booking not found' });
+      if (booking.email !== req.session.userEmail) return res.status(403).json({ error: 'Forbidden' });
+      const ok = await storage.updateBookingMealPreference(req.session.userEmail, bookingId, mealPreference, meals || null);
+      if (!ok) return res.status(500).json({ error: 'Failed to update meal preference' });
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('Meal preference error', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  app.post('/booking/complaint/:bookingId', ensureAuthenticated, async (req, res) => {
+    try {
+      const { bookingId } = req.params;
+      const { message } = req.body;
+      if (!message || typeof message !== 'string' || !message.trim()) return res.status(400).json({ error: 'Message required' });
+      const booking = await storage.getBookingById(bookingId);
+      if (!booking) return res.status(404).json({ error: 'Booking not found' });
+      if (booking.email !== req.session.userEmail) return res.status(403).json({ error: 'Forbidden' });
+      const complaint = await storage.createComplaint(req.session.userEmail, bookingId, { message: message.trim() });
+      if (!complaint) return res.status(500).json({ error: 'Failed to create complaint' });
+      return res.json({ success: true, complaint });
+    } catch (err) {
+      console.error('Create complaint error', err);
+      return res.status(500).json({ error: 'Internal server error' });
     }
   });
 

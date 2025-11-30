@@ -55,7 +55,8 @@
                     <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid <%= isCancelled ? '#dc3545' : isFreeMonth ? '#28a745' : '#007bff' %>;">
                       <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div style="flex: 1;">
-                          <h4 style="margin: 0 0 10px 0; color: #333;"><%= booking.propertyTitle %></h4>
+                            <h4 style="margin: 0 0 10px 0; color: #333;"><%= booking.propertyTitle %></h4>
+                            <a href="/booking/admin/<%= booking.id %>" class="btn btn-secondary">Manage</a>
                           <p style="margin: 5px 0; color: #666; font-size: 14px;"><strong>Property ID:</strong> <%= booking.propertyId.substring(0, 8) %>...</p>
                           <p style="margin: 5px 0; color: #666; font-size: 14px;"><strong>Booked on:</strong> <%= new Date(booking.bookingDate).toLocaleDateString('en-IN') %></p>
                           <p style="margin: 5px 0; color: #666; font-size: 14px;"><strong>Monthly Rent:</strong> ₹<%= booking.propertyPrice.toLocaleString('en-IN') %></p>

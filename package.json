@@ -5,16 +5,19 @@
   "license": "MIT",
   "scripts": {
     "dev": "node server/index.js",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "check-image-libs": "node tools/check-image-libs.js"
   },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "connect-mongo": "^4.6.0",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
-    "mongodb": "^4.14.0",
-    "bcryptjs": "^2.4.3",
     "express-session": "^1.17.3",
-    "connect-mongo": "^4.6.0",
+    "jimp": "^0.22.10",
+    "mongodb": "^4.14.0",
     "multer": "^1.4.5-lts.1",
-    "canvas": "^2.11.2"
+    "qrcode": "^1.5.4",
+    "sharp": "^0.33.0"
   }
 }
