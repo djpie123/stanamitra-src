@@ -133,20 +133,6 @@ export default async function runApp(setup) {
     next();
   });
 
-    
-      try {
-        const sharpModule = await import('sharp');
-        log('Detected `sharp` available — server-side resizing will prefer sharp', 'startup');
-      } catch (err) {
-        try {
-          const jimpModule = await import('jimp');
-          log('Detected `jimp` available — using jimp as fallback for resizing', 'startup');
-        } catch (err3) {
-          log('No native image processing libraries detected (sharp/jimp). Falling back to base64 storage for images.', 'startup');
-        }
-      }
-    })();
-
   const server = await registerRoutes(app);
 
   app.use((err, _req, res, _next) => {
